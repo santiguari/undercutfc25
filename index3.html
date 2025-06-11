@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player Monitor</title>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>   
+       <style>
         /* Estilos CSS básicos */
         body {
             font-family: 'Oswald', sans-serif;
@@ -48,7 +52,6 @@
             right: 20px; /* Ajusta la distancia desde el borde derecho */
             width: 70px; /* Ajusta el ancho del botón */
             height: 70px; /* Ajusta la altura del botón */
-            font-size: 16px;
             cursor: pointer;
             border-radius: 50%; /* Hace que el botón sea redondo */
             background-color: #000000; /* Color de fondo del botón */
@@ -76,12 +79,14 @@
             border: 1px solid #cecece;
             border-radius: 5px;
             padding: 10px;
-            width: 300px;
+            width: 650px;
             margin: 10px;
             position: relative;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            background-image: url("7.jpg");
+            background-size: cover;
         }
 
         .player-name {
@@ -89,7 +94,7 @@
             font-weight: bold;
             margin-top: 40px;
             margin-bottom: 10px;
-            font-size: 16px !important;
+            font-size: 20px !important;
         }
 
         .player-rating {
@@ -118,6 +123,8 @@
         .price-details, .price-calculation {
             flex: 1;
             padding: 5px;
+            font-size: 20px !important;
+
         }
 
         .price-updated {
@@ -132,11 +139,8 @@
             margin-left: 1.05cm;
             padding: 2px;
             font-weight: bold;
-            margin-bottom: -14px;
             width: fit-content;
-        }
-
-        li, .precio1 {
+            font-size: 24px !important;
             list-style-type: none; /* Eliminar los puntos de la lista */
             padding-left: 20px; /* Espacio a la izquierda para el icono */
             background-image: url('coin.png') !important; /* Establecer la imagen como fondo */
@@ -145,19 +149,8 @@
             background-position: left center; /* Posición de la imagen */
         }
 
-        .player-card {
-            /* background-color: rgb(255, 255, 255); */
-            background-image: url("7.jpg");
-            background-size: cover;
-        }
-
-        .search-results {
-            background-color: white;
-            color: black;
-        }
-
         .spa {
-            font-size: 16px !important;
+            font-size: 20px !important;
             font-weight: bold;
         }
 
@@ -168,6 +161,37 @@
             font-size: 2em;
             font-weight: bold;
             text-align: center;
+            color: black;
+        }
+
+        table{
+            font-size: 18px !important;
+        }
+
+        .monedas{
+            font-size: 24px !important;
+        }
+        .table-container {
+            width: 100%; /* Ajusta según sea necesario */
+            height: 500px; /* Ajusta según sea necesario */
+            overflow-y: auto;
+            border: 1px solid #ccc; /* Opcional, para un borde alrededor del contenedor */
+            padding: 10px; /* Opcional, para agregar un poco de espacio interno */
+        }
+
+        .player-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .player-table .td {
+            border: 1px solid #ccc; /* Opcional, para agregar bordes a las celdas */
+            padding: 5px; /* Opcional, para agregar espacio dentro de las celdas */
+            text-align: left;
+        }
+
+        .highcharts-tooltip{
+            font-size: 28px !important;
         }
     </style>
 </head>
@@ -184,7 +208,13 @@
     <audio id="alerta">        
     <source src="/alerta.mp3" type="audio/mpeg">
     </audio>
-    <div class="player-cards" id="player-cards"></div>
+    <div class="player-cards" id="player-cards">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.0.0-alpha.12/html2canvas.min.js"></script>
+
+
+
 
     <script>
          function updateEnglandTime() {
@@ -203,8 +233,7 @@
 
         setInterval(updateEnglandTime, 1000);
         updateEnglandTime(); // Initial call to display clock immediately
-const players = [
-    { name: 'Ngolo Kante', id: '23236', link: 'ngolo-kante/23236' },
+        const players = [    { name: 'Ngolo Kante', id: '23236', link: 'ngolo-kante/23236' },
     { name: 'William Saliba', id: '22938', link: 'william-saliba/22938' },
     { name: 'Jude Bellingham', id: '23204', link: 'jude-bellingham/23204' },
     { name: 'Michael Olise', id: '23002', link: 'michael-olise/23002' },
@@ -263,7 +292,6 @@ const players = [
 ];
 
 
-
 const searchInput = document.getElementById('search-input');
 const searchResults = document.getElementById('search-results');
 const playerCards = document.getElementById('player-cards');
@@ -290,6 +318,128 @@ searchInput.addEventListener('input', () => {
     }
 });
 
+
+function loadHourly(player, chartContainerSelector) {
+    var ishloaded = 0;
+    if (ishloaded == 0) {
+        var seriesOptionsh = [];
+        function createChartH() {
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+            Highcharts.stockChart(chartContainerSelector, {
+                chart: {
+                    backgroundColor: 'grey',
+                    height: 400
+                },
+                rangeSelector: {
+                    enabled: false
+                },
+                title: {
+                    align: 'left',
+                    text: 'Price History',
+                    style: {
+                        fontSize: '24px' // Tamaño de la letra del título
+                    }
+                },
+                exporting: {
+                    enabled: false
+                },
+                navigator: {
+                    enabled: false
+                },
+                yAxis: {
+                    gridLineWidth: 1,
+                    gridLineColor: '#1f2e32',
+                    plotLines: [{
+                        value: 0,
+                        width: 2,
+                        color: 'black'
+                    }],
+                    offset: 30,
+                    title: {
+                        style: {
+                            fontSize: '18px' // Tamaño de la letra del título del eje Y
+                        }
+                    },
+                    labels: {
+                        style: {
+                            fontSize: '14px', // Tamaño de la letra de las etiquetas del eje Y
+                            color: 'black'
+                        }
+                    }
+                },
+                legend: {
+                    enabled: true,
+                    itemStyle: {
+                        color: 'black',
+                        fontSize: '16px' // Tamaño de la letra de los elementos de la leyenda
+                    }
+                },
+                xAxis: {
+                    gridLineWidth: 1,
+                    gridLineColor: '#1f2e32',
+                    tickWidth: 0,
+                    lineWidth: 0,
+                    labels: {
+                        style: {
+                            fontSize: '14px', // Tamaño de la letra de las etiquetas del eje X
+                            color: 'black'
+                        }
+                    },
+                    title: {
+                        style: {
+                            fontSize: '18px' // Tamaño de la letra del título del eje X
+                        }
+                    }
+                },
+                plotOptions: {
+                    areaspline: {
+                        threshold: null
+                    },
+                    series: {
+                        fillOpacity: 0.05,
+                        dataLabels: {
+                            style: {
+                                fontSize: '24px' // Tamaño de la letra de las etiquetas de datos
+                            }
+                        }
+                    }
+                },
+                tooltip: {
+                    pointFormat: '<span style="color:{series.color}">{series.name}</span>: <b>{point.y}</b><br/>',
+                    valueDecimals: 0,
+                    split: true
+                },
+                credits: {
+                    enabled: false
+                },
+                series: seriesOptionsh
+            });
+        }
+        $.getJSON(`https://www.futwiz.com/en/app/price_history_player25_multi?p=${player.id}&h`, function (data) {
+            $.each(data, function (k, v) {
+                if (k == 'console') {
+                    k = 'Console';
+                    lc = '#66fbf9';
+                    seriesOptionsh.push({
+                        name: k,
+                        data: v,
+                        color: lc,
+                        type: 'areaspline'
+
+                    });
+                }
+            });
+            createChartH();
+        });
+        ishloaded = 1;
+    }
+}
+
+
 function addPlayerCard(player) {
     if (document.getElementById(`player-card-${player.id}`)) return;
 
@@ -297,26 +447,42 @@ function addPlayerCard(player) {
     playerCard.className = 'player-card';
     playerCard.id = `player-card-${player.id}`;
     playerCard.innerHTML = `
+    <div>
         <div class="close-btn" onclick="removePlayerCard('${player.id}')">✖</div>
         <div id="player-name-${player.id}" class="player-name">Loading...</div>
         <div id="player-rating-${player.id}" class="player-rating">Loading...</div>
         <div class="price-section">
             <div class="price-details">
                 <p class="precio1" id="price-num-${player.id}">Loading...</p>
-                <ul id="extra-prices-${player.id}"></ul>
+                <ul class="monedas" id="extra-prices-${player.id}"></ul>
+                <div class="price-calculation" id="price-calculation-${player.id}">
+                    <p>Price Calculation: Loading...</p>
+                </div>
+                <p id="price-bajon-${player.id}">Bajon: Loading...</p>
+                <p id="price-info-${player.id}">Info: Loading...</p>
+                <p id="price-updated-${player.id}" class="price-updated" style="font-size:16px">Loading...</p>
             </div>
-            <div class="price-calculation" id="price-calculation-${player.id}">
-                <p>Price Calculation: Loading...</p>
+            <div id="player-table-12345" class="table-container">
+                <div class="player-table" id="player-table-${player.id}"></div>
             </div>
         </div>
-        <p id="price-bajon-${player.id}">Bajon: Loading...</p>
-        <p id="price-info-${player.id}">Info: Loading...</p>
-        <p id="price-updated-${player.id}" class="price-updated" style:"font-size:16px">Loading...</p>
+    </div>
     `;
     playerCards.appendChild(playerCard);
+
+    // Crear contenedor para la gráfica
+    const chartContainer = document.createElement('div');
+    chartContainer.id = `player-chart-${player.id}`;
+    chartContainer.className = 'player-chart';
+    playerCard.appendChild(chartContainer);
+
+    // Cargar la gráfica en el contenedor
     fetchPlayerData(player);
     fetchPlayerData2(player);
+    loadHourly(player, chartContainer);
+
 }
+
 
 function removePlayerCard(playerId) {
     const playerCard = document.getElementById(`player-card-${playerId}`);
@@ -337,7 +503,7 @@ async function fetchPlayerData(player) {
         const playerName = playerNameElement ? playerNameElement.textContent.trim() : 'No se encontró el nombre del jugador';
         document.getElementById(`player-name-${player.id}`).textContent = playerName;
 
-        const playerRatingElement = doc.querySelector('.card-24-rating');
+        const playerRatingElement = doc.querySelector('.card-25-rating');
         const playerRating = playerRatingElement ? playerRatingElement.textContent.trim() : 'No se encontró el rating del jugador';
         document.getElementById(`player-rating-${player.id}`).textContent = playerRating;
 
@@ -375,6 +541,7 @@ async function fetchPlayerData(player) {
     }
 }
 
+
 async function fetchPlayerData2(player) {
     const url = `https://www.futwiz.com/en/fc25/player/${player.link}/soldprices/console`;
 
@@ -385,25 +552,47 @@ async function fetchPlayerData2(player) {
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
-        
+
         const bajonElement = doc.querySelector('.sale-price-num');
         const bajon = bajonElement ? bajonElement.textContent.trim() : 'No se encontró el valor de bajon';
         player.bajon = bajon;
-        
+
         const infoElement = doc.querySelector('.sale-price-info');
         const info = infoElement ? infoElement.textContent.trim() : 'No se encontró la información adicional';
         player.info = info;
-
 
         // Actualizar la visualización en la página
         document.getElementById(`price-bajon-${player.id}`).textContent = `Bajón: ${bajon}`;
         document.getElementById(`price-info-${player.id}`).textContent = info;
 
+        // Crear la tabla y agregarla a la derecha de la carta
+        const tableContainer = document.getElementById(`player-table-${player.id}`);
+        tableContainer.innerHTML = ''; // Limpiar el contenido de la tabla existente
+
+        const tableElement = document.createElement('table');
+        tableElement.className = 'player-table';
+        const tableRows = doc.querySelectorAll('.salerow');
+        for (let i = 0; i < 20; i++) {
+    const row = tableRows[i];
+    const columns = row.querySelectorAll('.sale-table-data');
+    const startTime = columns[0].textContent.trim();
+    const finalPrice = columns[2].textContent.trim();
+    const saleType = columns[3].textContent.trim();
+    const newRow = tableElement.insertRow();
+    newRow.innerHTML = `
+        <td class="td">${startTime}</td>
+        <td class="td">${finalPrice}</td>
+        <td class="td">${saleType}</td>
+    `;
+}
+
+
+        tableContainer.appendChild(tableElement);
+
     } catch (error) {
         console.error('Error al obtener los datos del jugador:', error);
     }
 }
-
 
 
 const style = document.createElement('style');
@@ -454,14 +643,14 @@ const nuevaHoraMin = fechaActual.getMinutes();
 // Formatea la nueva hora
 const hora2menos = `${nuevaHoraHrs.toString().padStart(2, '0')}:${nuevaHoraMin.toString().padStart(2, '0')}`;
 
-      
-      
+
+
 if (playerCard) {
         playerCard.style.border = ''; // Eliminar borde rojo antes de aplicar las nuevas condiciones
         playerCard.style.animation = '';
         dia.style.border = '';
 
-        
+
         }
 
       if (dia.textContent.includes("Today")) {
@@ -488,48 +677,6 @@ if (playerCard) {
            playerCard.style.border = '5px solid yellow';
         }
     }
-
-   /*
-    if (mainPriceElement && extraPriceElement) {
-        const price1 = parseInt(mainPriceElement.textContent.replace(/\D/g, ''));
-        const price2 = parseInt(extraPriceElement.textContent.replace(/\D/g, ''));
-
-        if (price2 > 50000 && price2 < 100000) {
-            if (!isNaN(price1) && !isNaN(price2) && price2 - price1 > 15000) {
-                if (playerCard) {
-                    playerCard.style.border = '4px solid red';
-                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
-                }
-            }
-        }
-
-        if (price2 > 99999 && price2 < 300000) {
-            if (!isNaN(price1) && !isNaN(price2) && price2 - price1 > 25000) {
-                if (playerCard) {
-                    playerCard.style.border = '4px solid red';
-                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
-                }
-            }
-        }
-
-        if (price2 > 299999 && price2 < 1000000) {
-            if (!isNaN(price1) && !isNaN(price2) && price2 - price1 > 30000) {
-                if (playerCard) {
-                    playerCard.style.border = '4px solid red';
-                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
-                }
-            }
-        }
-
-        if (price2 > 999999) {
-            if (!isNaN(price1) && !isNaN(price2) && price2 - price1 > 200000) {
-                if (playerCard) {
-                    playerCard.style.border = '4px solid red';
-                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
-                }
-            }
-        }
-    }*/
 
     if (mainPriceElement && extraPriceElement) {
     const price1 = parseInt(mainPriceElement.textContent.replace(/\D/g, ''));
@@ -580,6 +727,9 @@ if (playerCard) {
                     playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
                     // Reproduce el sonido
                     audio.play();
+
+                    
+
                 }
                 break;
             }
@@ -609,6 +759,8 @@ if (playerCard) {
     sortPlayerCards(); // Ordena los recuadros después del cálculo de precios
 }
 
+
+
 function showAllPlayers() {
     playerCards.innerHTML = '';
     players.forEach(player => {
@@ -617,19 +769,7 @@ function showAllPlayers() {
     sortPlayerCards(); // Ordena los recuadros después de mostrarlos todos
 }
 
-
-/*
-function sortPlayerCards() {
-            const cards = Array.from(document.querySelectorAll('.player-card'));
-            cards.sort((a, b) => {
-                const aRedBorder = a.style.border === '4px solid red';
-                const bRedBorder = b.style.border === '4px solid red';
-                return bRedBorder - aRedBorder;
-            });
-            cards.forEach(card => playerCards.appendChild(card));
-            }
-            */
-            function sortPlayerCards() {
+      function sortPlayerCards() {
     const cards = Array.from(document.querySelectorAll('.player-card'));
 
     cards.sort((a, b) => {
@@ -681,15 +821,17 @@ function sortPlayerCards() {
     cards.forEach(card => playerCards.appendChild(card));
 }
 
-
 function refreshAllCards() {
-    const playerCards = document.querySelectorAll('.player-card');
-    playerCards.forEach(card => {
+    const playerCardsList = document.querySelectorAll('.player-card');
+    playerCardsList.forEach(card => {
         const playerId = card.id.replace('player-card-', '');
         const player = players.find(p => p.id === playerId);
         if (player) {
             fetchPlayerData(player);
             fetchPlayerData2(player);
+            // Definir correctamente el selector del contenedor de la gráfica
+            const chartContainerSelector = `#player-chart-${playerId}`;
+            loadHourly(player, chartContainerSelector);
         }
     });
 }
