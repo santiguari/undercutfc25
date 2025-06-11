@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos CSS básicos */
+        body {
+            font-family: 'Oswald', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            background-image: url("r.jpg");
+            background-repeat: repeat;
+            background-size: 100000px;
+            font-weight: bolder !important;
+        }
+
+        .search-container {
+            margin-bottom: 40px;
+            position: relative;
+            width: 300px;
+            text-align: center;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-top: 0.2cm;
+            font-size: 18px;
+        }
+
+        .search-results {
+            position: absolute;
+            background-color: white;
+        }
+
+        .refresh-button {
+            font-size: 16px !important;
+            font-weight: bold;
+            position: fixed;
+            bottom: 20px; /* Ajusta la distancia desde la parte inferior */
+            right: 20px; /* Ajusta la distancia desde el borde derecho */
+            width: 70px; /* Ajusta el ancho del botón */
+            height: 70px; /* Ajusta la altura del botón */
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 50%; /* Hace que el botón sea redondo */
+            background-color: #000000; /* Color de fondo del botón */
+            color: white; /* Color del texto del botón */
+            border: none; /* Quita el borde del botón */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Agrega una sombra al botón */
+            z-index: 9999; /* Asegura que esté por encima de otros elementos */
+        }
+
+        .show-players-button {
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            margin-top: 6px;
+        }
+
+        .player-cards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1cm;
+        }
+
+        .player-card {
+            border: 1px solid #cecece;
+            border-radius: 5px;
+            padding: 10px;
+            width: 300px;
+            margin: 10px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .player-name {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 40px;
+            margin-bottom: 10px;
+            font-size: 16px !important;
+        }
+
+        .player-rating {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-weight: bold;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            cursor: pointer;
+        }
+
+        .price-section {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .price-details, .price-calculation {
+            flex: 1;
+            padding: 5px;
+        }
+
+        .price-updated {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #000000;
+            text-align: center;
+        }
+
+        .precio1 {
+            border: 1px solid rgb(0, 0, 0) !important;
+            margin-left: 1.05cm;
+            padding: 2px;
+            font-weight: bold;
+            margin-bottom: -14px;
+            width: fit-content;
+        }
+
+        li, .precio1 {
+            list-style-type: none; /* Eliminar los puntos de la lista */
+            padding-left: 20px; /* Espacio a la izquierda para el icono */
+            background-image: url('coin.png') !important; /* Establecer la imagen como fondo */
+            background-size: 16px; /* Tamaño de la imagen */
+            background-repeat: no-repeat; /* Evitar que la imagen se repita */
+            background-position: left center; /* Posición de la imagen */
+        }
+
+        .player-card {
+            /* background-color: rgb(255, 255, 255); */
+            background-image: url("7.jpg");
+            background-size: cover;
+        }
+
+        .search-results {
+            background-color: white;
+            color: black;
+        }
+
+        .spa {
+            font-size: 16px !important;
+            font-weight: bold;
+        }
+
+        .price-details {
+            font-size: 20px !important;
+        }
+        .clock {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="clock" id="englandClock"></div>
+    <div class="search-container">
+        <button class="show-players-button" onclick="showAllPlayers()">Mostrar Jugadores</button>
+        <input type="text" id="search-input" placeholder="Buscar jugador...">
+        <div class="search-results" id="search-results"></div>
+    </div>
+    <div class="button-container">
+        <button class="refresh-button" onclick="refreshAllCards()">Refresh</button>
+    </div>
+    <audio id="alerta">        
+    <source src="/alerta.mp3" type="audio/mpeg">
+    </audio>
+    <div class="player-cards" id="player-cards"></div>
+
+    <script>
+         function updateEnglandTime() {
+            const clockElement = document.getElementById('englandClock');
+            const now = new Date();
+            const options = {
+                timeZone: 'Europe/London',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+            };
+            const timeString = now.toLocaleTimeString('en-GB', options);
+            clockElement.textContent = timeString;
+        }
+
+        setInterval(updateEnglandTime, 1000);
+        updateEnglandTime(); // Initial call to display clock immediately
+const players = [
+    { name: 'Ngolo Kante', id: '23236', link: 'ngolo-kante/23236' },
+    { name: 'William Saliba', id: '22938', link: 'william-saliba/22938' },
+    { name: 'Jude Bellingham', id: '23204', link: 'jude-bellingham/23204' },
+    { name: 'Michael Olise', id: '23002', link: 'michael-olise/23002' },
+    { name: 'Pedri', id: '23160', link: 'pedri/23160' },
+    { name: 'Victor Osimhen', id: '22998', link: 'victor-osimhen/22998' },
+    { name: 'Vini Jr.', id: '23159', link: 'vini-jr./23159' },
+    { name: 'Jonathan Tah', id: '22999', link: 'jonathan-tah/22999' },
+    { name: 'Alessandro Bastoni', id: '23068', link: 'alessandro-bastoni/23068' },
+    { name: 'Tabitha Chawinga', id: '22852', link: 'tabitha-chawinga/22852' },
+    { name: 'Willian Pacho', id: '22857', link: 'willian-pacho/22857' },
+    { name: 'Viktor Gyokeres', id: '23154', link: 'viktor-gyokeres/23154' },
+    { name: 'Joao Neves', id: '22851', link: 'joao-neves/22851' },
+    { name: 'Bradley Barcola', id: '22850', link: 'bradley-barcola/22850' },
+    { name: 'Leonardo Fernandez', id: '23235', link: 'leonardo-fernandez/23235' },
+    { name: 'Sophia Wilson', id: '23071', link: 'sophia-wilson/23071' },
+    { name: 'Karim Benzema', id: '23242', link: 'karim-benzema/23242' },
+    { name: 'Alphonso Davies', id: '23003', link: 'alphonso-davies/23003' },
+    { name: 'Ryan Gravenberch', id: '22939', link: 'ryan-gravenberch/22939' },
+    { name: 'Xherdan Shaqiri', id: '23072', link: 'xherdan-shaqiri/23072' },
+    { name: 'Scott McTominay', id: '23073', link: 'scott-mctominay/23073' },
+    { name: 'Gabriel', id: '22935', link: 'gabriel/22935' },
+    { name: 'Erling Haaland', id: '22925', link: 'erling-haaland/22925' },
+    { name: 'Pernille Harder', id: '23015', link: 'pernille-harder/23015' },
+    { name: 'Moise Kean', id: '23074', link: 'moise-kean/23074' },
+    { name: 'Riccardo Orsolini', id: '23070', link: 'riccardo-orsolini/23070' },
+    { name: 'Caroline Hansen', id: '23157', link: 'caroline-hansen/23157' },
+    { name: 'Alexander Isak', id: '22928', link: 'alexander-isak/22928' },
+    { name: 'Caroline Hansen', id: '23157', link: 'caroline-hansen/23157' },
+    { name: 'Dayot Upamecano', id: '23016', link: 'dayot-upamecano/23016' },
+    { name: 'Federico Dimarco', id: '23080', link: 'federico-dimarco/23080' },
+    { name: 'Aitana Bonmati', id: '23153', link: 'aitana-bonmati/23153' },
+    { name: 'Vitinha', id: '22862', link: 'vitinha/22862' },
+    { name: 'Matheus Cunha', id: '22951', link: 'matheus-cunha/22951' },
+    { name: 'Declan Rice', id: '22929', link: 'declan-rice/22929' },
+    { name: 'Moussa Diaby', id: '23246', link: 'moussa-diaby/23246' },
+    { name: 'Temwa Chawinga', id: '23067', link: 'temwa-chawinga/23067' },
+    { name: 'Cole Palmer', id: '22936', link: 'cole-palmer/22936' },
+    { name: 'Antonio Rudiger', id: '23162', link: 'antonio-rudiger/23162' },
+    { name: 'Davinson Sanchez', id: '23007', link: 'davinson-sanchez/23007' },
+    { name: 'Tijjani Reijnders', id: '23122', link: 'tijjani-reijnders/23122' },
+    { name: 'Alessia Russo', id: '22931', link: 'alessia-russo/22931' },
+    { name: 'Jamal Musiala', id: '23006', link: 'jamal-musiala/23006' },
+    { name: 'Ko Seung Beom', id: '23241', link: 'ko-seung-beom/23241' },
+    { name: 'Nuno Mendes', id: '22855', link: 'nuno-mendes/22855' },
+    { name: 'Joshua Kimmich', id: '23017', link: 'joshua-kimmich/23017' },
+    { name: 'Jean Luc Dompe', id: '23250', link: 'jean-luc-dompe/23250' },
+    { name: 'Ao Tanaka', id: '22930', link: 'ao-tanaka/22930' },
+    { name: 'Salem Al Dawsari', id: '23234', link: 'salem-al-dawsari/23234' },
+    { name: 'Croix Bethune', id: '23075', link: 'croix-bethune/23075' },
+    { name: 'Lindsey Horan', id: '22847', link: 'lindsey-horan/22847' },
+    { name: 'Trincao', id: '23168', link: 'trincao/23168' },
+    { name: 'Ann Katrin Berger', id: '23084', link: 'ann-katrin-berger/23084' },
+    { name: 'Armand Lauriente', id: '23253', link: 'armand-lauriente/23253' },
+    { name: 'Barbra Banda', id: '23078', link: 'barbra-banda/23078' },
+    { name: 'Junior Firpo', id: '22941', link: 'junior-firpo/22941' }
+];
+
+
+
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+const playerCards = document.getElementById('player-cards');
+
+searchInput.addEventListener('input', () => {
+    const query = searchInput.value.toLowerCase();
+    searchResults.innerHTML = '';
+    if (query) {
+        searchResults.style.display = 'block';
+        const matchedPlayers = players.filter(player => player.name.toLowerCase().includes(query));
+        matchedPlayers.forEach(player => {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'search-result';
+            resultDiv.textContent = player.name;
+            resultDiv.addEventListener('click', () => {
+                addPlayerCard(player);
+                searchInput.value = '';
+                searchResults.style.display = 'none';
+            });
+            searchResults.appendChild(resultDiv);
+        });
+    } else {
+        searchResults.style.display = 'none';
+    }
+});
+
+function addPlayerCard(player) {
+    if (document.getElementById(`player-card-${player.id}`)) return;
+
+    const playerCard = document.createElement('div');
+    playerCard.className = 'player-card';
+    playerCard.id = `player-card-${player.id}`;
+    playerCard.innerHTML = `
+        <div class="close-btn" onclick="removePlayerCard('${player.id}')">✖</div>
+        <div id="player-name-${player.id}" class="player-name">Loading...</div>
+        <div id="player-rating-${player.id}" class="player-rating">Loading...</div>
+        <div class="price-section">
+            <div class="price-details">
+                <p class="precio1" id="price-num-${player.id}">Loading...</p>
+                <ul id="extra-prices-${player.id}"></ul>
+            </div>
+            <div class="price-calculation" id="price-calculation-${player.id}">
+                <p>Price Calculation: Loading...</p>
+            </div>
+        </div>
+        <p id="price-bajon-${player.id}">Bajon: Loading...</p>
+        <p id="price-info-${player.id}">Info: Loading...</p>
+        <p id="price-updated-${player.id}" class="price-updated" style:"font-size:16px">Loading...</p>
+    `;
+    playerCards.appendChild(playerCard);
+    fetchPlayerData(player);
+    fetchPlayerData2(player);
+}
+
+function removePlayerCard(playerId) {
+    const playerCard = document.getElementById(`player-card-${playerId}`);
+    if (playerCard) playerCards.removeChild(playerCard);
+}
+
+async function fetchPlayerData(player) {
+    const url = `https://www.futwiz.com/en/fc25/player/${player.link}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Error al realizar la solicitud: ${response.status}`);
+
+        const htmlContent = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+
+        const playerNameElement = doc.querySelector('.playername');
+        const playerName = playerNameElement ? playerNameElement.textContent.trim() : 'No se encontró el nombre del jugador';
+        document.getElementById(`player-name-${player.id}`).textContent = playerName;
+
+        const playerRatingElement = doc.querySelector('.card-24-rating');
+        const playerRating = playerRatingElement ? playerRatingElement.textContent.trim() : 'No se encontró el rating del jugador';
+        document.getElementById(`player-rating-${player.id}`).textContent = playerRating;
+
+        const playerPriceBlock = doc.querySelector('.player-price-block.xb-block');
+        if (playerPriceBlock) {
+            const priceNumDiv = playerPriceBlock.querySelector('.price-num');
+            const priceNum = priceNumDiv ? priceNumDiv.textContent.trim() : 'No se encontró el precio principal';
+            document.getElementById(`price-num-${player.id}`).textContent = `${priceNum}`;
+
+            const extraPricesDiv = playerPriceBlock.querySelector('.extra-prices');
+            const extraPrices = extraPricesDiv ? Array.from(extraPricesDiv.querySelectorAll('div')).map(div => div.textContent.trim()) : [];
+            const extraPricesList = document.getElementById(`extra-prices-${player.id}`);
+            extraPricesList.innerHTML = '';
+            extraPrices.forEach((price, index) => {
+                const li = document.createElement('li');
+                li.textContent = price;
+                li.id = `extra-price-${player.id}-${index}`; // ID único para cada precio adicional
+                extraPricesList.appendChild(li);
+            });
+
+            // Lógica adicional para el cálculo del precio de compra
+            calculatePrice(player.id);
+        } else {
+            console.error('No se encontró el bloque de precios del jugador');
+        }
+
+        const updatedTimeElement = playerPriceBlock.querySelector('.price-updated');
+        const updatedTime = updatedTimeElement ? updatedTimeElement.textContent.trim() : 'No se encontró el tiempo de actualización';
+        document.getElementById(`price-updated-${player.id}`).textContent = updatedTime;
+
+        sortPlayerCards(); // Ordena los recuadros después de actualizar
+
+    } catch (error) {
+        console.error('Error al obtener los datos del jugador:', error);
+    }
+}
+
+async function fetchPlayerData2(player) {
+    const url = `https://www.futwiz.com/en/fc25/player/${player.link}/soldprices/console`;
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Error al realizar la solicitud: ${response.status}`);
+        const htmlContent = await response.text();
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+        
+        const bajonElement = doc.querySelector('.sale-price-num');
+        const bajon = bajonElement ? bajonElement.textContent.trim() : 'No se encontró el valor de bajon';
+        player.bajon = bajon;
+        
+        const infoElement = doc.querySelector('.sale-price-info');
+        const info = infoElement ? infoElement.textContent.trim() : 'No se encontró la información adicional';
+        player.info = info;
+
+
+        // Actualizar la visualización en la página
+        document.getElementById(`price-bajon-${player.id}`).textContent = `Bajón: ${bajon}`;
+        document.getElementById(`price-info-${player.id}`).textContent = info;
+
+    } catch (error) {
+        console.error('Error al obtener los datos del jugador:', error);
+    }
+}
+
+
+
+const style = document.createElement('style');
+style.innerHTML = `
+    @keyframes fadeBorder {
+        0% { border-color: transparent; }
+        50% { border-color: red; }
+        100% { border-color: transparent; }
+    }
+    @keyframes fadeCard {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    .player-card {
+        background-image: url("7.jpg");
+        background-size: cover;
+        transition: border 0.3s ease-in-out;
+    }
+`;
+document.head.appendChild(style);
+
+  function calculatePrice(playerId) {
+      const playerCard = document.getElementById(`player-card-${playerId}`);
+      const mainPriceElement = document.getElementById(`price-num-${playerId}`);
+      const extraPriceElement = document.getElementById(`extra-price-${playerId}-0`);
+      const fecha = document.getElementById(`price-nueva-${playerId}`);
+      const dia = document.getElementById(`price-info-${playerId}`);
+      const hora = "";
+      const clockElement = document.getElementById('englandClock');
+      const timeWithoutSeconds = clockElement.textContent.substring(0, clockElement.textContent.length - 3);
+      const [horaActualHrs, horaActualMin] = timeWithoutSeconds.split(":").map(Number);
+      // Obtiene el elemento de audio
+      var audio = document.getElementById("alerta");
+
+
+// Crea un objeto Date con la hora y los minutos actuales
+const fechaActual = new Date();
+fechaActual.setHours(horaActualHrs, horaActualMin, 0, 0);
+
+// Resta 2 horas
+fechaActual.setHours(fechaActual.getHours() - 2);
+
+// Extrae la nueva hora y minutos
+const nuevaHoraHrs = fechaActual.getHours();
+const nuevaHoraMin = fechaActual.getMinutes();
+
+// Formatea la nueva hora
+const hora2menos = `${nuevaHoraHrs.toString().padStart(2, '0')}:${nuevaHoraMin.toString().padStart(2, '0')}`;
+
+      
+      
+if (playerCard) {
+        playerCard.style.border = ''; // Eliminar borde rojo antes de aplicar las nuevas condiciones
+        playerCard.style.animation = '';
+        dia.style.border = '';
+
+        
+        }
+
+      if (dia.textContent.includes("Today")) {
+        const hora = dia.textContent.replace("Today ", "");
+
+        const [horaActualHrs, horaActualMin] = timeWithoutSeconds.split(":").map(Number);
+        const [horaVentaHrs, horaVentaMin] = hora.split(":").map(Number);
+
+        // Crea objetos de fecha para cada hora recibida
+        const fechaActual = new Date();
+        fechaActual.setHours(horaActualHrs, horaActualMin, 0, 0);
+
+        const fechaVenta = new Date();
+        fechaVenta.setHours(horaVentaHrs, horaVentaMin, 0, 0);
+
+        // Calcula la diferencia en milisegundos
+        const diferenciaMilisegundos = fechaActual - fechaVenta;
+
+
+        // Calcula la diferencia en horas
+        const diferenciaHoras = diferenciaMilisegundos / (1000 * 60 * 60);
+
+        if (diferenciaHoras <= 0.5) {
+           playerCard.style.border = '5px solid yellow';
+        }
+    }
+
+   /*
+    if (mainPriceElement && extraPriceElement) {
+        const price1 = parseInt(mainPriceElement.textContent.replace(/\D/g, ''));
+        const price2 = parseInt(extraPriceElement.textContent.replace(/\D/g, ''));
+
+        if (price2 > 50000 && price2 < 100000) {
+            if (!isNaN(price1) && !isNaN(price2) && price2 - price1 > 15000) {
+                if (playerCard) {
+                    playerCard.style.border = '4px solid red';
+                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
+                }
+            }
+        }
+
+        if (price2 > 99999 && price2 < 300000) {
+            if (!isNaN(price1) && !isNaN(price2) && price2 - price1 > 25000) {
+                if (playerCard) {
+                    playerCard.style.border = '4px solid red';
+                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
+                }
+            }
+        }
+
+        if (price2 > 299999 && price2 < 1000000) {
+            if (!isNaN(price1) && !isNaN(price2) && price2 - price1 > 30000) {
+                if (playerCard) {
+                    playerCard.style.border = '4px solid red';
+                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
+                }
+            }
+        }
+
+        if (price2 > 999999) {
+            if (!isNaN(price1) && !isNaN(price2) && price2 - price1 > 200000) {
+                if (playerCard) {
+                    playerCard.style.border = '4px solid red';
+                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
+                }
+            }
+        }
+    }*/
+
+    if (mainPriceElement && extraPriceElement) {
+    const price1 = parseInt(mainPriceElement.textContent.replace(/\D/g, ''));
+    const price2 = parseInt(extraPriceElement.textContent.replace(/\D/g, ''));
+
+    // Definir los rangos de precios y sus estilos correspondientes
+    const priceRanges = [
+        { min: 0, max: 100000 },
+        { min: 100000, max: 200000 },
+        { min: 200000, max: 300000 },
+        { min: 300000, max: 400000 },
+        { min: 400000, max: 500000 },
+        { min: 500000, max: 600000 },
+        { min: 600000, max: 700000 },
+        { min: 700000, max: 800000 },
+        { min: 800000, max: 900000 },
+        { min: 900000, max: 1000000 },
+        { min: 1000000, max: 1100000 },
+        { min: 1100000, max: 1200000 },
+        { min: 1200000, max: 1300000 },
+        { min: 1300000, max: 1400000 },
+        { min: 1400000, max: 1500000 },
+        { min: 1500000, max: 1600000 },
+        { min: 1600000, max: 1700000 },
+        { min: 1700000, max: 1800000 },
+        { min: 1800000, max: 1900000 },
+        { min: 1900000, max: 2000000 },
+        { min: 2000000, max: 2100000 },
+        { min: 2100000, max: 2200000 },
+        { min: 2200000, max: 2300000 },
+        { min: 2300000, max: 2400000 },
+        { min: 2400000, max: 2500000 }
+    ];
+
+    // Calcular la ganancia
+    const ganancia = Math.round((price2 * 0.95) - price1);
+
+    // Calcular el porcentaje de ganancia
+    const porcentaje = ((ganancia / price2) * 100).toFixed(2);
+
+    // Verificar si el porcentaje es mayor o igual al 5%
+    if (porcentaje >= 4) {
+        // Verificar en qué rango de precio se encuentra price2 y aplicar el estilo correspondiente
+        for (const range of priceRanges) {
+            if (price2 >= range.min && price2 < range.max && !isNaN(price1)) {
+                if (playerCard) {
+                    playerCard.style.border = '4px solid red';
+                    playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
+                    // Reproduce el sonido
+                    audio.play();
+                }
+                break;
+            }
+        }
+    }
+}
+
+    if (mainPriceElement && extraPriceElement) {
+        const mainPrice = parseFloat(mainPriceElement.textContent.replace(/,/g, ''));
+        const extraPrice = parseFloat(extraPriceElement.textContent.replace(/,/g, ''));
+
+        if (!isNaN(mainPrice) && !isNaN(extraPrice)) {
+            const ganancia = Math.round((extraPrice * 0.95) - mainPrice);
+            const porcentaje = ((ganancia / extraPrice) * 100).toFixed(2);
+            const compra = Math.round(extraPrice * 0.90);
+            const ganancia2 = Math.round((extraPrice * 0.95) - compra);
+            const porcentaje2 = ((ganancia2 / extraPrice) * 100).toFixed(2);
+            document.getElementById(`price-calculation-${playerId}`).innerHTML = `
+                <p>Ganancia: ${ganancia}<br>Porcentaje: ${porcentaje}%</p>
+                <p>Compra: ${compra}<br>Ganancia: ${ganancia2}</p>
+            `;
+        } else {
+            document.getElementById(`price-calculation-${playerId}`).innerHTML = `<p>Error en los precios</p>`;
+        }
+    }
+
+    sortPlayerCards(); // Ordena los recuadros después del cálculo de precios
+}
+
+function showAllPlayers() {
+    playerCards.innerHTML = '';
+    players.forEach(player => {
+        addPlayerCard(player);
+    });
+    sortPlayerCards(); // Ordena los recuadros después de mostrarlos todos
+}
+
+
+/*
+function sortPlayerCards() {
+            const cards = Array.from(document.querySelectorAll('.player-card'));
+            cards.sort((a, b) => {
+                const aRedBorder = a.style.border === '4px solid red';
+                const bRedBorder = b.style.border === '4px solid red';
+                return bRedBorder - aRedBorder;
+            });
+            cards.forEach(card => playerCards.appendChild(card));
+            }
+            */
+            function sortPlayerCards() {
+    const cards = Array.from(document.querySelectorAll('.player-card'));
+
+    cards.sort((a, b) => {
+        // Comprobar si tienen borde rojo
+        const aRedBorder = a.style.border === '4px solid red';
+        const bRedBorder = b.style.border === '4px solid red';
+
+        if (aRedBorder !== bRedBorder) {
+            return bRedBorder - aRedBorder; // Ordenar por borde rojo primero
+        } else {
+            // Comprobar si tienen borde amarillo
+            const aYellowBorder = a.style.border === '5px solid yellow';
+            const bYellowBorder = b.style.border === '5px solid yellow';
+
+            if (aYellowBorder !== bYellowBorder) {
+                return bYellowBorder - aYellowBorder; // Ordenar por borde amarillo si no tienen borde rojo
+            } else if (aYellowBorder && bYellowBorder) {
+                // Obtener el ID del jugador
+                const aPlayerId = a.getAttribute('data-player-id');
+                const bPlayerId = b.getAttribute('data-player-id');
+
+                // Obtener la hora de cada carta
+                const aHoraElement = document.getElementById(`price-nueva-${aPlayerId}`);
+                const bHoraElement = document.getElementById(`price-nueva-${bPlayerId}`);
+
+                // Si no se encuentran los elementos, asegurarse de que no sean null
+                const aHora = aHoraElement ? aHoraElement.textContent.replace("Today ", "") : "00:00";
+                const bHora = bHoraElement ? bHoraElement.textContent.replace("Today ", "") : "00:00";
+
+                console.log(`Comparando horas: ${aHora} vs ${bHora}`);
+
+                // Convertir las horas a minutos para comparación
+                const [aHours, aMinutes] = aHora.split(':').map(Number);
+                const [bHours, bMinutes] = bHora.split(':').map(Number);
+
+                const aTotalMinutes = aHours * 60 + aMinutes;
+                const bTotalMinutes = bHours * 60 + bMinutes;
+
+                console.log(`Total minutos: ${aTotalMinutes} vs ${bTotalMinutes}`);
+
+                return bTotalMinutes - aTotalMinutes; // Ordenar de mayor a menor por hora
+            } else {
+                return 0;
+            }
+        }
+    });
+
+    const playerCards = document.getElementById('player-cards'); // Suponiendo que playerCards sea el contenedor donde se deben agregar las cartas
+    cards.forEach(card => playerCards.appendChild(card));
+}
+
+
+function refreshAllCards() {
+    const playerCards = document.querySelectorAll('.player-card');
+    playerCards.forEach(card => {
+        const playerId = card.id.replace('player-card-', '');
+        const player = players.find(p => p.id === playerId);
+        if (player) {
+            fetchPlayerData(player);
+            fetchPlayerData2(player);
+        }
+    });
+}
+
+// Función adicional para simular dos clics consecutivos
+function simulateDoubleClick() {
+    const refreshButton = document.querySelector('.refresh-button');
+    if (refreshButton) {
+        refreshButton.click();
+        setTimeout(() => {
+            refreshButton.click();
+        }, 25); // Retraso de 100ms entre los dos clics
+    }
+}
+
+// Simula dos clics en el botón cada 5 segundos
+setInterval(simulateDoubleClick, 1000); // 5000 milisegundos = 5 segundos
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captura de Gráfico</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Asegúrate de que el contenedor tenga un tamaño definido */
+        .recharts-responsive-container {
+            min-height: 400px; /* Ajusta según sea necesario */
+        }
+    </style>
+</head>
+<body>
+    <button id="screenshotBtn">Capturar Gráfico</button>
+    <div class="recharts-responsive-container"> <!-- Este es el div del gráfico --> </div>
+    <div id="imageContainer"></div> <!-- Contenedor para la imagen capturada -->
+    
+    <script>
+        document.getElementById("screenshotBtn").onclick = function() {
+            const chartContainer = document.querySelector(".recharts-responsive-container");
+            console.log('Tamaño del contenedor:', chartContainer.getBoundingClientRect());
+            html2canvas(chartContainer).then(canvas => {
+                let img = document.createElement('img');
+                img.src = canvas.toDataURL();
+                img.style.width = '100%';
+                document.getElementById("imageContainer").appendChild(img);
+            }).catch(err => {
+                console.error('Error al capturar el gráfico:', err);
+            });
+        };
+    </script>
+</body>
+</html>

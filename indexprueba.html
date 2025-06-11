@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch Example</title>
+</head>
+<body>
+    <script>
+async function fetchData() {
+  try {
+    const response = await fetch('https://www.fut.gg/api/fut/prices/67313787/', {
+      mode: 'no-cors'
+    });
+    console.log('response', response);
+    // No podrás acceder al contenido de la respuesta si usas 'no-cors'
+  } catch (error) {
+    console.log('we got an error getting the continents');
+  }
+}
+
+fetchData();
+
+
+fetchData();
+
+    </script>
+</body>
+</html>
