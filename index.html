@@ -580,6 +580,16 @@ if (playerCard) {
                     playerCard.style.animation = 'fadeCard 1s infinite, fadeBorder 1s infinite';
                     // Reproduce el sonido
                     audio.play();
+
+  fetch('https://discord.com/api/webhooks/1382524284513288273/1ugQr5doNzpAQXz7sf8f2MN7MhwOzgJARivTJZcoO4h0YKf6XVBhFuZxifxl9CAEdN_W', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: '¡Hola desde el navegador!' })
+  })
+  .then(res => console.log('Mensaje enviado'))
+  .catch(err => console.error('Error', err));
+
+
                 }
                 break;
             }
