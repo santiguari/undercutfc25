@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player Monitor</title>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         /* Estilos CSS básicos */
         body {
@@ -249,17 +250,6 @@ const players = [
     { name: 'Jamal Musiala', id: '23006', link: 'jamal-musiala/23006' },
     { name: 'Ko Seung Beom', id: '23241', link: 'ko-seung-beom/23241' },
     { name: 'Nuno Mendes', id: '22855', link: 'nuno-mendes/22855' },
-    { name: 'Joshua Kimmich', id: '23017', link: 'joshua-kimmich/23017' },
-    { name: 'Jean Luc Dompe', id: '23250', link: 'jean-luc-dompe/23250' },
-    { name: 'Ao Tanaka', id: '22930', link: 'ao-tanaka/22930' },
-    { name: 'Salem Al Dawsari', id: '23234', link: 'salem-al-dawsari/23234' },
-    { name: 'Croix Bethune', id: '23075', link: 'croix-bethune/23075' },
-    { name: 'Lindsey Horan', id: '22847', link: 'lindsey-horan/22847' },
-    { name: 'Trincao', id: '23168', link: 'trincao/23168' },
-    { name: 'Ann Katrin Berger', id: '23084', link: 'ann-katrin-berger/23084' },
-    { name: 'Armand Lauriente', id: '23253', link: 'armand-lauriente/23253' },
-    { name: 'Barbra Banda', id: '23078', link: 'barbra-banda/23078' },
-    { name: 'Junior Firpo', id: '22941', link: 'junior-firpo/22941' }
 ];
 
 
@@ -426,6 +416,49 @@ style.innerHTML = `
 `;
 document.head.appendChild(style);
 
+const sentPlayers = {}; // { 'nombre del jugador': timestamp }
+
+function construirMensajeDiscord(playerId) {
+    const name = document.getElementById(`player-name-${playerId}`)?.textContent || 'N/A';
+    const rating = document.getElementById(`player-rating-${playerId}`)?.textContent || 'N/A';
+    const undercut = document.getElementById(`price-num-${playerId}`)?.textContent || 'N/A';
+
+    const pricesList = Array.from(document.querySelectorAll(`#extra-prices-${playerId} li`))
+        .map(li => li.textContent.trim());
+
+const p = Array.from(document.querySelectorAll(`#price-calculation-${playerId} p`))
+    .find(p => p.innerHTML.includes('Porcentaje'));
+
+const calculoRaw = p ? p.innerHTML.replace(/<br\s*\/?>/gi, '\n') : '';
+const ganancia = calculoRaw.match(/Ganancia:\s*-?\d+/)?.[0] || 'Ganancia: N/A';
+const porcentaje = calculoRaw.match(/Porcentaje:\s*-?\d+(\.\d+)?%/)?.[0] || 'Porcentaje: N/A';
+
+
+    const bajon = document.getElementById(`price-bajon-${playerId}`)?.textContent || 'N/A';
+    const info = document.getElementById(`price-info-${playerId}`)?.textContent || 'N/A';
+    const updated = document.getElementById(`price-updated-${playerId}`)?.textContent || 'N/A';
+
+    const mensaje = `**${name} (${rating})**
+
+🟥 **UNDERCUT**: ${undercut}
+
+💰 **Precios**           🧮 **Cálculo**
+${undercut}                 ${ganancia}
+${pricesList[0] || ''}      ${porcentaje}          
+${pricesList[1] || ''}
+${pricesList[2] || ''}
+
+📉 **Bajón**              📅 **Info**
+${bajon}           ${info}
+
+🔄 **Actualizado**
+${updated}
+`;
+
+    return { name, mensaje };
+
+}
+
   function calculatePrice(playerId) {
       const playerCard = document.getElementById(`player-card-${playerId}`);
       const mainPriceElement = document.getElementById(`price-num-${playerId}`);
@@ -571,7 +604,7 @@ if (playerCard) {
     const porcentaje = ((ganancia / price2) * 100).toFixed(2);
 
     // Verificar si el porcentaje es mayor o igual al 5%
-    if (porcentaje >= 4) {
+    if (porcentaje >= 2 && price1 > 0 ) {
         // Verificar en qué rango de precio se encuentra price2 y aplicar el estilo correspondiente
         for (const range of priceRanges) {
             if (price2 >= range.min && price2 < range.max && !isNaN(price1)) {
@@ -581,15 +614,44 @@ if (playerCard) {
                     // Reproduce el sonido
                     audio.play();
 
-  fetch('https://discord.com/api/webhooks/1382524284513288273/1ugQr5doNzpAQXz7sf8f2MN7MhwOzgJARivTJZcoO4h0YKf6XVBhFuZxifxl9CAEdN_W', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: '¡Hola desde el navegador!' })
-  })
-  .then(res => console.log('Mensaje enviado'))
-  .catch(err => console.error('Error', err));
+function enviarJugadorADiscord(playerId) {
+    const { name, mensaje } = construirMensajeDiscord(playerId);
+    const ahora = Date.now();
+    const CINCO_MINUTOS = 5 * 60 * 1000;
 
+    if (sentPlayers[name]) {
+        const tiempoDesdeUltimoEnvio = ahora - sentPlayers[name];
+        if (tiempoDesdeUltimoEnvio < CINCO_MINUTOS) {
+            console.log(`🔁 Ya se envió "${name}" hace menos de 5 minutos.`);
+            return; // No enviar de nuevo
+        }
+    }
 
+    // Actualizar o agregar a la lista de enviados
+    sentPlayers[name] = ahora;
+
+    const data = {
+  embeds: [
+    {
+      description: mensaje,
+      color: 0xffffff // blanco, podés usar otro color si querés
+    }
+  ]
+};
+
+    // Enviar a Discord
+    fetch('https://discord.com/api/webhooks/1382524284513288273/1ugQr5doNzpAQXz7sf8f2MN7MhwOzgJARivTJZcoO4h0YKf6XVBhFuZxifxl9CAEdN_W', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(data)
+    }).then(() => {
+        console.log(`✅ Enviado a Discord: ${name}`);
+    }).catch(err => {
+        console.error(`❌ Error al enviar ${name}:`, err);
+    });
+}
+
+enviarJugadorADiscord(playerId); 
                 }
                 break;
             }
