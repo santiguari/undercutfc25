@@ -423,33 +423,36 @@ function construirMensajeDiscord(playerId) {
     const rating = document.getElementById(`player-rating-${playerId}`)?.textContent || 'N/A';
     const undercut = document.getElementById(`price-num-${playerId}`)?.textContent || 'N/A';
 
-    const pricesList = Array.from(document.querySelectorAll(`#extra-prices-${playerId} li`))
-        .map(li => li.textContent.trim());
-
-const p = Array.from(document.querySelectorAll(`#price-calculation-${playerId} p`))
-    .find(p => p.innerHTML.includes('Porcentaje'));
-
-const calculoRaw = p ? p.innerHTML.replace(/<br\s*\/?>/gi, '\n') : '';
-const ganancia = calculoRaw.match(/Ganancia:\s*-?\d+/)?.[0] || 'Ganancia: N/A';
-const porcentaje = calculoRaw.match(/Porcentaje:\s*-?\d+(\.\d+)?%/)?.[0] || 'Porcentaje: N/A';
-
-
     const bajon = document.getElementById(`price-bajon-${playerId}`)?.textContent || 'N/A';
     const info = document.getElementById(`price-info-${playerId}`)?.textContent || 'N/A';
     const updated = document.getElementById(`price-updated-${playerId}`)?.textContent || 'N/A';
+    const extraPriceElement = document.getElementById(`extra-price-${playerId}-0`)?.textContent || 'N/A';
 
+
+
+// Convertir texto a número, eliminando comas
+const extra1 = parseInt((document.getElementById(`extra-price-${playerId}-0`)?.textContent || '0').replace(/,/g, ''));
+const extra2 = document.getElementById(`extra-price-${playerId}-1`)?.textContent || 'N/A';
+const extra3 = document.getElementById(`extra-price-${playerId}-2`)?.textContent || 'N/A';
+const undercutNum = parseInt((undercut || '0').replace(/,/g, ''));
+
+// Calcular ganancia y porcentaje
+const ganancia = Math.round((extra1 * 0.95) - undercutNum);
+const porcentaje = extra1 ? ((ganancia / extra1) * 100).toFixed(2) : '0.00';
+    
     const mensaje = `**${name} (${rating})**
 
-🟥 **UNDERCUT**: ${undercut}
+🟥 **UNDERCUT: ${undercut}**
+\`\`\`
+💰 Precios         🧮 Cálculo
+${undercut.padEnd(20)}${ganancia}
+${extra1.toLocaleString().padEnd(20)}${porcentaje}%
+${extra2}
+${extra3}
 
-💰 **Precios**           🧮 **Cálculo**
-${undercut}                 ${ganancia}
-${pricesList[0] || ''}      ${porcentaje}          
-${pricesList[1] || ''}
-${pricesList[2] || ''}
-
-📉 **Bajón**              📅 **Info**
-${bajon}           ${info}
+📉 Bajón        📅 Info
+${bajon.padEnd(12)}   ${info}
+\`\`\`
 
 🔄 **Actualizado**
 ${updated}
